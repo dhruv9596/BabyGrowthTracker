@@ -1,129 +1,113 @@
-import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  Button,
-  StyleSheet,
-} from "react-native";
-import { GrowthMeasurement } from "./types";
+import React, { useState, useEffect } from "react";
+import { View, Text, TextInput, Button, Switch, StyleSheet } from "react-native";
 import { v4 as uuidv4 } from "uuid";
+import { GrowthMeasurement } from "./types";
+import { calcAgeInDays } from "./utils";
 
 interface MeasurementFormProps {
   onSave: (m: GrowthMeasurement) => void;
   babyBirthDate: string;
-  existing?: GrowthMeasurement; // optional: if editing
+  existing?: GrowthMeasurement;
 }
 
-export default function MeasurementForm({
-  onSave,
-  babyBirthDate,
-  existing,
-}: MeasurementFormProps) {
-  const [weightKg, setWeightKg] = useState("");
-  const [heightCm, setHeightCm] = useState("");
-  const [headCm, setHeadCm] = useState("");
-  const [date, setDate] = useState("");
+const MeasurementForm: React.FC<MeasurementFormProps> = ({ onSave, babyBirthDate, existing }) => {
+  const [unit, setUnit] = useState<"SI" | "Imperial">("SI");
+  const [weight, setWeight] = useState("");
+  const [height, setHeight] = useState("");
+  const [head, setHead] = useState("");
+  const [date, setDate] = useState(new Date().toISOString());
 
-  // Prefill form if editing
+  // ✅ Prefill when `existing` changes
   useEffect(() => {
     if (existing) {
-      setWeightKg(existing.weightKg.toString());
-      setHeightCm(existing.heightCm.toString());
-      setHeadCm(existing.headCm.toString());
+      // Convert stored SI values back to display
+      setWeight(existing.weightKg.toString());
+      setHeight(existing.heightCm.toString());
+      setHead(existing.headCm.toString());
       setDate(existing.date);
     } else {
-      setWeightKg("");
-      setHeightCm("");
-      setHeadCm("");
-      setDate(new Date().toISOString().split("T")[0]);
+      // Reset form for new entry
+      setWeight("");
+      setHeight("");
+      setHead("");
+      setDate(new Date().toISOString());
     }
   }, [existing]);
 
-  const calcAgeInDays = (birthDate: string, measureDate: string) => {
-    const birth = new Date(birthDate);
-    const measure = new Date(measureDate);
-    return Math.floor(
-      (measure.getTime() - birth.getTime()) / (1000 * 60 * 60 * 24)
-    );
-  };
-
   const handleSave = () => {
-    if (!weightKg || !heightCm || !headCm || !date) {
-      return;
-    }
+    const ageInDays = calcAgeInDays(babyBirthDate, date);
 
-    const measurement: GrowthMeasurement = {
-      id: existing ? existing.id : uuidv4(),
+    const weightKg = unit === "Imperial" ? parseFloat(weight) / 2.20462 : parseFloat(weight);
+    const heightCm = unit === "Imperial" ? parseFloat(height) / 0.393701 : parseFloat(height);
+    const headCm = unit === "Imperial" ? parseFloat(head) / 0.393701 : parseFloat(head);
+
+    const newMeasurement: GrowthMeasurement = {
+      id: existing?.id ?? uuidv4(),
       date,
-      ageInDays: calcAgeInDays(babyBirthDate, date),
-      weightKg: parseFloat(weightKg),
-      heightCm: parseFloat(heightCm),
-      headCm: parseFloat(headCm),
+      ageInDays,
+      weightKg,
+      heightCm,
+      headCm,
     };
 
-    onSave(measurement);
-
-    // reset form only if adding
-    if (!existing) {
-      setWeightKg("");
-      setHeightCm("");
-      setHeadCm("");
-      setDate(new Date().toISOString().split("T")[0]);
-    }
+    onSave(newMeasurement);
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>
-        {existing ? "Edit Measurement" : "Add Measurement"}
-      </Text>
+      <Text style={styles.title}>{existing ? "Edit Measurement" : "Add Measurement"}</Text>
 
-      <Text>Date (YYYY-MM-DD)</Text>
-      <TextInput
-        style={styles.input}
-        value={date}
-        onChangeText={setDate}
-        placeholder="YYYY-MM-DD"
-      />
+      <View style={styles.toggleRow}>
+        <Text>{unit === "SI" ? "SI (kg/cm)" : "Imperial (lb/in)"}</Text>
+        <Switch
+          value={unit === "Imperial"}
+          onValueChange={() => setUnit(unit === "SI" ? "Imperial" : "SI")}
+        />
+      </View>
 
-      <Text>Weight (kg)</Text>
       <TextInput
-        style={styles.input}
-        value={weightKg}
-        onChangeText={setWeightKg}
+        placeholder={`Weight (${unit === "SI" ? "kg" : "lb"})`}
         keyboardType="numeric"
-      />
-
-      <Text>Height (cm)</Text>
-      <TextInput
+        value={weight}
+        onChangeText={setWeight}
         style={styles.input}
-        value={heightCm}
-        onChangeText={setHeightCm}
-        keyboardType="numeric"
       />
-
-      <Text>Head Circumference (cm)</Text>
       <TextInput
-        style={styles.input}
-        value={headCm}
-        onChangeText={setHeadCm}
+        placeholder={`Height (${unit === "SI" ? "cm" : "in"})`}
         keyboardType="numeric"
+        value={height}
+        onChangeText={setHeight}
+        style={styles.input}
+      />
+      <TextInput
+        placeholder={`Head (${unit === "SI" ? "cm" : "in"})`}
+        keyboardType="numeric"
+        value={head}
+        onChangeText={setHead}
+        style={styles.input}
       />
 
       <Button title={existing ? "Update" : "Save"} onPress={handleSave} />
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: { padding: 16 },
   title: { fontSize: 18, fontWeight: "bold", marginBottom: 12 },
+  toggleRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 12,
+    alignItems: "center",
+  },
   input: {
     borderWidth: 1,
     borderColor: "#ccc",
     padding: 8,
-    marginBottom: 12,
-    borderRadius: 4,
+    marginBottom: 10,
+    borderRadius: 6,
   },
 });
+
+export default MeasurementForm;

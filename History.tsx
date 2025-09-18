@@ -13,8 +13,9 @@ import { GrowthMeasurement } from "./types";
 interface HistoryProps {
   data: GrowthMeasurement[];
   onEdit?: (entry: GrowthMeasurement, index: number) => void;
-  onDelete?: (index: number) => void;
+  onDelete?: (id: string) => void;
 }
+
 
 const History: React.FC<HistoryProps> = ({ data, onEdit, onDelete }) => {
   const [unit, setUnit] = useState<"SI" | "Imperial">("SI");
@@ -28,16 +29,15 @@ const History: React.FC<HistoryProps> = ({ data, onEdit, onDelete }) => {
     return value.toFixed(1);
   };
 
-  const confirmDelete = (index: number) => {
-    Alert.alert("Delete Entry", "Are you sure you want to delete this entry?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: () => onDelete && onDelete(index),
-      },
-    ]);
-  };
+  const confirmDelete = (id: string) => {
+      Alert.alert("Delete Entry", "Are you sure you want to delete this entry?", [
+        { text: "Cancel", style: "cancel" },
+        { text: "Delete", style: "destructive", onPress: () => onDelete?.(id) },
+      ]);
+    };
+
+
+
 
   return (
     <View style={styles.container}>
@@ -97,10 +97,11 @@ const History: React.FC<HistoryProps> = ({ data, onEdit, onDelete }) => {
                 </TouchableOpacity>
               )}
               {onDelete && (
-                <TouchableOpacity onPress={() => confirmDelete(index)}>
+                <TouchableOpacity onPress={() => confirmDelete(item.id)}>
                   <Text style={styles.deleteText}>Delete</Text>
                 </TouchableOpacity>
               )}
+
             </View>
           </View>
         )}

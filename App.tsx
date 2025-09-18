@@ -39,23 +39,25 @@ export default function App() {
   return (
     <NavigationContainer>
       <Tab.Navigator
-        screenOptions={({ route }) => ({
-          headerShown: true,
-          tabBarIcon: ({ color, size }) => {
-            let iconName: string = "home";
+  screenOptions={({ route }) => ({
+    headerShown: true,
+    tabBarIcon: ({ color, size }) => {
+      let iconName: string = "";
 
-            if (route.name === "Home") iconName = "home";
-            else if (route.name === "Chart") iconName = "bar-chart";
+      if (route.name === "Home") iconName = "home";
+      else if (route.name === "Chart") iconName = "bar-chart";
+      // if you add History screen back:
+      // else if (route.name === "History") iconName = "time";
 
-            return <Ionicons name={iconName} size={size} color={color} />;
-          },
-          tabBarActiveTintColor: "tomato",
-          tabBarInactiveTintColor: "gray",
-        })}
-      >
-        <Tab.Screen name="Home" component={HomeScreen} />
-        <Tab.Screen name="Chart" component={GrowthChartScreen} />
-      </Tab.Navigator>
+      return <Ionicons name={iconName} size={size} color={color} />;
+    },
+    tabBarActiveTintColor: "tomato",
+    tabBarInactiveTintColor: "gray",
+  })}
+>
+  <Tab.Screen name="Home" component={HomeScreen} />
+  <Tab.Screen name="Chart" component={GrowthChartScreen} />
+</Tab.Navigator>
     </NavigationContainer>
   );
 }

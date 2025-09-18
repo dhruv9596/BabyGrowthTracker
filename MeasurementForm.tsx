@@ -1,5 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, Button, Switch, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  Button,
+  Switch,
+  StyleSheet,
+  Platform,
+} from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { v4 as uuidv4 } from "uuid";
 import { GrowthMeasurement } from "./types";
 import { calcAgeInDays } from "./utils";
@@ -10,40 +19,46 @@ interface MeasurementFormProps {
   existing?: GrowthMeasurement;
 }
 
-const MeasurementForm: React.FC<MeasurementFormProps> = ({ onSave, babyBirthDate, existing }) => {
+const MeasurementForm: React.FC<MeasurementFormProps> = ({
+  onSave,
+  babyBirthDate,
+  existing,
+}) => {
   const [unit, setUnit] = useState<"SI" | "Imperial">("SI");
   const [weight, setWeight] = useState("");
   const [height, setHeight] = useState("");
   const [head, setHead] = useState("");
-  const [date, setDate] = useState(new Date().toISOString());
+  const [date, setDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
-  // ✅ Prefill when `existing` changes
+  // Prefill form if editing
   useEffect(() => {
     if (existing) {
-      // Convert stored SI values back to display
       setWeight(existing.weightKg.toString());
       setHeight(existing.heightCm.toString());
       setHead(existing.headCm.toString());
-      setDate(existing.date);
+      setDate(new Date(existing.date));
     } else {
-      // Reset form for new entry
       setWeight("");
       setHeight("");
       setHead("");
-      setDate(new Date().toISOString());
+      setDate(new Date());
     }
   }, [existing]);
 
   const handleSave = () => {
-    const ageInDays = calcAgeInDays(babyBirthDate, date);
+    const ageInDays = calcAgeInDays(babyBirthDate, date.toISOString());
 
-    const weightKg = unit === "Imperial" ? parseFloat(weight) / 2.20462 : parseFloat(weight);
-    const heightCm = unit === "Imperial" ? parseFloat(height) / 0.393701 : parseFloat(height);
-    const headCm = unit === "Imperial" ? parseFloat(head) / 0.393701 : parseFloat(head);
+    const weightKg =
+      unit === "Imperial" ? parseFloat(weight) / 2.20462 : parseFloat(weight);
+    const heightCm =
+      unit === "Imperial" ? parseFloat(height) / 0.393701 : parseFloat(height);
+    const headCm =
+      unit === "Imperial" ? parseFloat(head) / 0.393701 : parseFloat(head);
 
     const newMeasurement: GrowthMeasurement = {
       id: existing?.id ?? uuidv4(),
-      date,
+      date: date.toISOString(),
       ageInDays,
       weightKg,
       heightCm,
@@ -55,16 +70,42 @@ const MeasurementForm: React.FC<MeasurementFormProps> = ({ onSave, babyBirthDate
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{existing ? "Edit Measurement" : "Add Measurement"}</Text>
+      <Text style={styles.title}>
+        {existing ? "Edit Measurement" : "Add Measurement"}
+      </Text>
 
+      {/* Unit toggle */}
       <View style={styles.toggleRow}>
         <Text>{unit === "SI" ? "SI (kg/cm)" : "Imperial (lb/in)"}</Text>
         <Switch
           value={unit === "Imperial"}
-          onValueChange={() => setUnit(unit === "SI" ? "Imperial" : "SI")}
+          onValueChange={() =>
+            setUnit(unit === "SI" ? "Imperial" : "SI")
+          }
         />
       </View>
 
+      {/* Date picker */}
+      <View style={{ marginBottom: 12 }}>
+        <Button
+          title={`Date: ${date.toLocaleDateString()}`}
+          onPress={() => setShowDatePicker(true)}
+        />
+        {showDatePicker && (
+          <DateTimePicker
+            value={date}
+            mode="date"
+            display={Platform.OS === "ios" ? "spinner" : "default"}
+            onChange={(event, selectedDate) => {
+              setShowDatePicker(false);
+              if (selectedDate) setDate(selectedDate);
+            }}
+            maximumDate={new Date()}
+          />
+        )}
+      </View>
+
+      {/* Measurements */}
       <TextInput
         placeholder={`Weight (${unit === "SI" ? "kg" : "lb"})`}
         keyboardType="numeric"
@@ -98,8 +139,8 @@ const styles = StyleSheet.create({
   toggleRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 12,
     alignItems: "center",
+    marginBottom: 12,
   },
   input: {
     borderWidth: 1,

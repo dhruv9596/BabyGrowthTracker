@@ -5,6 +5,7 @@ import MeasurementForm from "./MeasurementForm";
 import History from "./History";
 import { GrowthMeasurement, BabyProfile } from "./types";
 import { saveMeasurements, loadMeasurements } from "./storage";
+import GrowthChart from "./GrowthChart";
 
 const baby: BabyProfile = {
   id: "1",
@@ -56,7 +57,9 @@ export default function App() {
           babyBirthDate={baby.birthDate}
           existing={editIndex !== null ? measurements[editIndex] : undefined}
         />
+        
         <History data={measurements} onEdit={handleEdit} onDelete={handleDelete} />
+        <GrowthChart data={measurements} />
       </ScrollView>
     </SafeAreaView>
   );

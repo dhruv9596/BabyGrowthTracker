@@ -1,21 +1,21 @@
-import React, { useEffect, useState } from 'react';
-import 'react-native-get-random-values';
-import { Alert, Button, SafeAreaView, ScrollView } from 'react-native';
-import MeasurementForm from './MeasurementForm';
-// import GrowthChart from './GrowthChart';
-import History from './History';
-import { GrowthMeasurement, BabyProfile } from './types';
-import { saveMeasurements, loadMeasurements } from './storage';
+import React, { useEffect, useState } from "react";
+import "react-native-get-random-values";
+import { SafeAreaView, ScrollView } from "react-native";
+import MeasurementForm from "./MeasurementForm";
+import History from "./History";
+import { GrowthMeasurement, BabyProfile } from "./types";
+import { saveMeasurements, loadMeasurements } from "./storage";
 
 const baby: BabyProfile = {
-  id: '1',
-  name: 'Baby A',
-  birthDate: '2024-01-01',
-  gender: 'female',
+  id: "1",
+  name: "Baby A",
+  birthDate: "2024-01-01",
+  gender: "female",
 };
 
 export default function App() {
   const [measurements, setMeasurements] = useState<GrowthMeasurement[]>([]);
+  const [editIndex, setEditIndex] = useState<number | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -24,8 +24,26 @@ export default function App() {
     })();
   }, []);
 
-  const addMeasurement = async (m: GrowthMeasurement) => {
-    const updated = [...measurements, m];
+  const addOrUpdateMeasurement = async (m: GrowthMeasurement) => {
+    let updated: GrowthMeasurement[];
+    if (editIndex !== null) {
+      updated = [...measurements];
+      updated[editIndex] = m; // replace edited one
+      setEditIndex(null);
+    } else {
+      updated = [...measurements, m];
+    }
+    setMeasurements(updated);
+    await saveMeasurements(updated);
+  };
+
+  const handleEdit = (entry: GrowthMeasurement, index: number) => {
+    setEditIndex(index);
+    // pass entry down into MeasurementForm if you want to prefill fields
+  };
+
+  const handleDelete = async (index: number) => {
+    const updated = measurements.filter((_, i) => i !== index);
     setMeasurements(updated);
     await saveMeasurements(updated);
   };
@@ -33,10 +51,12 @@ export default function App() {
   return (
     <SafeAreaView>
       <ScrollView>
-        <Button title="Test Button" onPress={() => Alert.alert("Button works!")} />
-        <MeasurementForm onSave={addMeasurement} babyBirthDate={baby.birthDate} />
-        {/* <GrowthChart data={measurements} /> */}
-        <History data={measurements} />
+        <MeasurementForm
+          onSave={addOrUpdateMeasurement}
+          babyBirthDate={baby.birthDate}
+          existing={editIndex !== null ? measurements[editIndex] : undefined}
+        />
+        <History data={measurements} onEdit={handleEdit} onDelete={handleDelete} />
       </ScrollView>
     </SafeAreaView>
   );

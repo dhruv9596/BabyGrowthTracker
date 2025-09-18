@@ -1,74 +1,129 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
-import { v4 as uuidv4 } from 'uuid';
-import { GrowthMeasurement } from './types';
-import { calcAgeInDays } from './utils';
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  Button,
+  StyleSheet,
+} from "react-native";
+import { GrowthMeasurement } from "./types";
+import { v4 as uuidv4 } from "uuid";
 
-interface Props {
+interface MeasurementFormProps {
   onSave: (m: GrowthMeasurement) => void;
   babyBirthDate: string;
+  existing?: GrowthMeasurement; // optional: if editing
 }
 
-export default function MeasurementForm({ onSave, babyBirthDate }: Props) {
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [weight, setWeight] = useState('');
-  const [height, setHeight] = useState('');
-  const [head, setHead] = useState('');
+export default function MeasurementForm({
+  onSave,
+  babyBirthDate,
+  existing,
+}: MeasurementFormProps) {
+  const [weightKg, setWeightKg] = useState("");
+  const [heightCm, setHeightCm] = useState("");
+  const [headCm, setHeadCm] = useState("");
+  const [date, setDate] = useState("");
+
+  // Prefill form if editing
+  useEffect(() => {
+    if (existing) {
+      setWeightKg(existing.weightKg.toString());
+      setHeightCm(existing.heightCm.toString());
+      setHeadCm(existing.headCm.toString());
+      setDate(existing.date);
+    } else {
+      setWeightKg("");
+      setHeightCm("");
+      setHeadCm("");
+      setDate(new Date().toISOString().split("T")[0]);
+    }
+  }, [existing]);
+
+  const calcAgeInDays = (birthDate: string, measureDate: string) => {
+    const birth = new Date(birthDate);
+    const measure = new Date(measureDate);
+    return Math.floor(
+      (measure.getTime() - birth.getTime()) / (1000 * 60 * 60 * 24)
+    );
+  };
 
   const handleSave = () => {
+    if (!weightKg || !heightCm || !headCm || !date) {
+      return;
+    }
+
     const measurement: GrowthMeasurement = {
-      id: uuidv4(),
+      id: existing ? existing.id : uuidv4(),
       date,
       ageInDays: calcAgeInDays(babyBirthDate, date),
-      weightKg: parseFloat(weight),
-      heightCm: parseFloat(height),
-      headCm: parseFloat(head),
+      weightKg: parseFloat(weightKg),
+      heightCm: parseFloat(heightCm),
+      headCm: parseFloat(headCm),
     };
-    console.log("✅ Saving measurement:", measurement);
+
     onSave(measurement);
 
-    // clear inputs
-    setWeight('');
-    setHeight('');
-    setHead('');
+    // reset form only if adding
+    if (!existing) {
+      setWeightKg("");
+      setHeightCm("");
+      setHeadCm("");
+      setDate(new Date().toISOString().split("T")[0]);
+    }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>Date (YYYY-MM-DD)</Text>
-      <TextInput style={styles.input} value={date} onChangeText={setDate} />
+      <Text style={styles.title}>
+        {existing ? "Edit Measurement" : "Add Measurement"}
+      </Text>
 
-      <Text style={styles.label}>Weight (kg)</Text>
+      <Text>Date (YYYY-MM-DD)</Text>
       <TextInput
         style={styles.input}
-        value={weight}
-        onChangeText={setWeight}
+        value={date}
+        onChangeText={setDate}
+        placeholder="YYYY-MM-DD"
+      />
+
+      <Text>Weight (kg)</Text>
+      <TextInput
+        style={styles.input}
+        value={weightKg}
+        onChangeText={setWeightKg}
         keyboardType="numeric"
       />
 
-      <Text style={styles.label}>Height (cm)</Text>
+      <Text>Height (cm)</Text>
       <TextInput
         style={styles.input}
-        value={height}
-        onChangeText={setHeight}
+        value={heightCm}
+        onChangeText={setHeightCm}
         keyboardType="numeric"
       />
 
-      <Text style={styles.label}>Head Circumference (cm)</Text>
+      <Text>Head Circumference (cm)</Text>
       <TextInput
         style={styles.input}
-        value={head}
-        onChangeText={setHead}
+        value={headCm}
+        onChangeText={setHeadCm}
         keyboardType="numeric"
       />
 
-      <Button title="Save" onPress={handleSave} />
+      <Button title={existing ? "Update" : "Save"} onPress={handleSave} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 12 },
-  label: { marginTop: 8 },
-  input: { borderWidth: 1, padding: 8, marginTop: 4, borderRadius: 4 },
+  container: { padding: 16 },
+  title: { fontSize: 18, fontWeight: "bold", marginBottom: 12 },
+  input: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    padding: 8,
+    marginBottom: 12,
+    borderRadius: 4,
+  },
 });

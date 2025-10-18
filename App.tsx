@@ -18,8 +18,6 @@ export default function App() {
 
             if (route.name === "Home") iconName = "home";
             else if (route.name === "Chart") iconName = "bar-chart";
-            // if you add History screen back:
-            // else if (route.name === "History") iconName = "time";
 
             return <Ionicons name={iconName} size={size} color={color} />;
           },

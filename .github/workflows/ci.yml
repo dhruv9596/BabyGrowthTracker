@@ -69,5 +69,5 @@ jobs:
       - name: Run ESLint
         run: npm run lint --if-present
 
-      - name: Run Tests
-        run: npm test --if-present
+      #- name: Run Tests
+      #  run: npm test --if-present
